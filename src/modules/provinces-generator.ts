@@ -71,6 +71,16 @@ class ProvinceModule {
     },
   };
 
+  // Vietnamese xianxia (culture base 43) province forms, keyed by the state form
+  xianxiaForms: Record<string, Record<string, number>> = {
+    Monarchy: { Phủ: 5, Châu: 4, Quận: 2, Huyện: 2, Trấn: 1 },
+    Republic: { Phường: 2, Trấn: 2, Châu: 1 },
+    Theocracy: { Phong: 5, Đường: 2, Viện: 1, Cốc: 1, Động: 1 }, // sect peaks and halls
+    Union: { Châu: 3, Phủ: 1 },
+    Anarchy: { "Sơn Trại": 2, "Hoang Vực": 1 },
+    Wild: { "Hoang Vực": 4, "Man Địa": 2, "Sơn Trại": 1, Động: 1 },
+  };
+
   generate(regenerate = false, regenerateLockedStates = false) {
     TIME && console.time("generateProvinces");
     const localSeed = regenerate ? generateSeed() : seed;
@@ -128,7 +138,11 @@ class ProvinceModule {
         Math.ceil((stateBurgs.length * provincesRatio) / 100),
         2,
       );
-      const form = Object.assign({}, this.forms[s.form!]);
+      const isXianxia = pack.cultures[s.culture]?.base === 43;
+      const form = Object.assign(
+        {},
+        (isXianxia && this.xianxiaForms[s.form!]) || this.forms[s.form!],
+      );
 
       for (let i = 0; i < provincesNumber; i++) {
         const provinceId = provinces.length;
@@ -309,16 +323,20 @@ class ProvinceModule {
 
         const name = (() => {
           const colonyName = colony && P(0.8) && getColonyName();
-          if (colonyName) return colonyName;
+          if (colonyName)
+            return pack.cultures[c]?.base === 43
+              ? colonyName.replace(/^New /, "Tân ")
+              : colonyName;
           if (burgCell && P(0.5)) return burgs[burg].name;
           return Names.getState(Names.getCultureShort(c), c);
         })();
 
         const formName = (() => {
-          if (singleIsle) return "Island";
-          if (isleGroup) return "Islands";
-          if (colony) return "Colony";
-          return rw(this.forms["Wild"]);
+          const isXianxia = pack.cultures[c]?.base === 43;
+          if (singleIsle) return isXianxia ? "Đảo" : "Island";
+          if (isleGroup) return isXianxia ? "Quần Đảo" : "Islands";
+          if (colony) return isXianxia ? "Thuộc Địa" : "Colony";
+          return rw(isXianxia ? this.xianxiaForms.Wild : this.forms.Wild);
         })();
 
         const fullName = `${name} ${formName}`;

@@ -95,7 +95,12 @@ function editMarker(markerI) {
   }
 
   function updateInputs() {
-    byId("markerIcon").innerHTML = marker.icon.startsWith("http") || marker.icon.startsWith("data:image")
+    const isExternalIcon =
+      marker.icon.startsWith("http") ||
+      marker.icon.startsWith("data:image") ||
+      marker.icon.startsWith("./") ||
+      marker.icon.endsWith(".svg");
+    byId("markerIcon").innerHTML = isExternalIcon
       ? `<img src="${marker.icon}" style="width: 1em; height: 1em;">`
       : marker.icon;
 

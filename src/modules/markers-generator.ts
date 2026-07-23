@@ -21,10 +21,11 @@ declare global {
 
 type MarkerConfig = {
   type: string;
-  icon: string;
+  icon: string | (() => string); // static icon or per-marker icon picker
   dx?: number;
   dy?: number;
   px?: number;
+  pin?: string;
   min: number;
   each: number;
   multiplier: number;
@@ -106,6 +107,7 @@ class MarkersModule {
   private getDefaultConfig(): MarkerConfig[] {
     const culturesSet = (byId("culturesSet") as HTMLSelectElement)?.value || "";
     const isFantasy = culturesSet.includes("Fantasy");
+    const isXianxia = culturesSet === "xianxia";
 
     /*
       Default markers config:
@@ -130,6 +132,32 @@ class MarkersModule {
         multiplier: 1,
         list: this.listVolcanoes.bind(this),
         add: this.addVolcano.bind(this),
+      },
+      {
+        type: "floating-islands",
+        icon: () =>
+          P(0.6)
+            ? "./images/icons/floating-island.svg"
+            : "./images/icons/floating-island-2.svg",
+        dx: 0,
+        dy: 0,
+        px: 30,
+        pin: "no",
+        min: 1,
+        each: 40,
+        multiplier: isXianxia ? 2 : isFantasy ? 0.3 : 0,
+        list: this.listFloatingIslands.bind(this),
+        add: this.addFloatingIsland.bind(this),
+      },
+      {
+        type: "sect-gates",
+        icon: "⛩️",
+        px: 14,
+        min: 1,
+        each: 15,
+        multiplier: 1,
+        list: this.listSectGates.bind(this),
+        add: this.addSectGate.bind(this),
       },
       {
         type: "hot-springs",
@@ -469,7 +497,7 @@ class MarkersModule {
     TIME && console.time("addMarkers");
 
     this.config.forEach(
-      ({ type, icon, dx, dy, px, min, each, multiplier, list, add }) => {
+      ({ type, icon, dx, dy, px, pin, min, each, multiplier, list, add }) => {
         if (multiplier === 0) return;
 
         const candidates = Array.from(list(pack));
@@ -479,7 +507,10 @@ class MarkersModule {
 
         while (quantity && candidates.length) {
           const [cell] = this.extractAnyElement(candidates);
-          const marker = this.addMarker({ icon, type, dx, dy, px }, { cell });
+          const marker = this.addMarker(
+            { icon, type, dx, dy, px, pin },
+            { cell },
+          );
           if (!marker) continue;
           add(`marker${marker.i}`, cell);
           quantity--;
@@ -512,6 +543,7 @@ class MarkersModule {
     const i = last(pack.markers)?.i + 1 || 0;
     const [x, y] = this.getMarkerCoordinates(marker.cell);
     marker = { ...base, x, y, ...marker, i };
+    if (typeof marker.icon === "function") marker.icon = marker.icon();
     pack.markers.push(marker);
     this.occupied[marker.cell] = true;
     return marker;
@@ -1154,6 +1186,53 @@ class MarkersModule {
     const legend = `${ra(subjects)} speak of a ${ra(adjectives)} ${monster} who inhabits ${toponym} hills and ${ra(
       modusOperandi,
     )}.`;
+    notes.push({ id, name, legend });
+  }
+
+  // Floating islands hover above high mountains, saturated with spiritual energy
+  private listFloatingIslands({ cells }: PackedGraph) {
+    return cells.i.filter((i) => !this.occupied[i] && cells.h[i] >= 62);
+  }
+
+  private addFloatingIsland(id: string, cell: number) {
+    const { cells, cultures } = pack;
+
+    const culture = cells.culture[cell];
+    const isXianxia = cultures[culture]?.base === 43;
+    const proper =
+      culture && isXianxia
+        ? Names.getCulture(culture)
+        : (Names.getBase(43) as string);
+    const name = `${proper} Phù Đảo`;
+    const legend = ra([
+      `A mountain isle torn from the earth in an ancient qi cataclysm. It drifts above the peaks, anchored to a spirit vein, and cultivation sects contend fiercely for the dense spiritual energy that pools upon it.`,
+      `A floating island held aloft by the dragon vein running beneath ${proper}. Legend says an immortal once refined it into a personal abode, and their cave-manor still hides among its hanging waterfalls.`,
+      `One of the sky-isles left behind when the ancient immortals ascended. Herbs of extraordinary age grow on its slopes, guarded by spirit beasts that nest on the underside of the rock.`,
+    ]);
+    notes.push({ id, name, legend });
+  }
+
+  // Sect gates mark the mountain entrances of cultivation sects
+  private listSectGates({ cells }: PackedGraph) {
+    return cells.i.filter(
+      (i) =>
+        !this.occupied[i] &&
+        cells.h[i] >= 45 &&
+        cells.burg[i] &&
+        pack.cultures[cells.culture[i]]?.base === 43,
+    );
+  }
+
+  private addSectGate(id: string, cell: number) {
+    const { cells, burgs, religions } = pack;
+
+    const burgName = burgs[cells.burg[cell]].name;
+    const religion = cells.religion[cell];
+    const faith = religions[religion]?.name;
+    const name = `${burgName} Sơn Môn`;
+    const legend = `The mountain gate of ${burgName}. Beyond its guardian formation lie the sect's halls, elder peaks and forbidden grounds${
+      faith ? `, where disciples cultivate the teachings of ${faith}` : ""
+    }.`;
     notes.push({ id, name, legend });
   }
 

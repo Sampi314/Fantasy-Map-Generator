@@ -1,5 +1,5 @@
 import { max, mean } from "d3";
-import { gauss, getAdjective, P, ra, rand, rw } from "../utils";
+import { byId, gauss, getAdjective, P, ra, rand, rw } from "../utils";
 
 declare global {
   var Zones: ZonesModule;
@@ -36,6 +36,7 @@ class ZonesModule {
       fault: { quantity: 1, generate: (u) => this.addFault(u) },
       flood: { quantity: 1, generate: (u) => this.addFlood(u) },
       tsunami: { quantity: 1, generate: (u) => this.addTsunami(u) },
+      secretRealm: { quantity: 1.8, generate: (u) => this.addSecretRealm(u) },
     };
   }
 
@@ -114,6 +115,53 @@ class ZonesModule {
       type: "Invasion",
       cells: invasionCells,
       color: "url(#hatch1)",
+    });
+  }
+
+  // Secret realms: pockets of dense spiritual energy, common in xianxia worlds
+  private addSecretRealm(usedCells: Uint8Array) {
+    const { cells } = pack;
+
+    const isXianxia =
+      (byId("culturesSet") as HTMLSelectElement | null)?.value === "xianxia";
+    if (!isXianxia && !P(0.05)) return;
+
+    const candidates = cells.i.filter((i) => !usedCells[i] && cells.h[i] >= 50);
+    const startCell = ra(candidates);
+    if (startCell === undefined) return;
+
+    const realmCells: number[] = [];
+    const queue = [startCell];
+    const maxCells = rand(6, 25);
+
+    while (queue.length) {
+      const cellId = P(0.4) ? queue.shift()! : queue.pop()!;
+      realmCells.push(cellId);
+      if (realmCells.length >= maxCells) break;
+
+      cells.c[cellId].forEach((neibCellId) => {
+        if (usedCells[neibCellId]) return;
+        if (cells.h[neibCellId] < 20) return; // stay on land
+        usedCells[neibCellId] = 1;
+        queue.push(neibCellId);
+      });
+    }
+
+    const subtype = rw({
+      "Bí Cảnh": 5,
+      "Linh Mạch": 3,
+      "Động Thiên": 2,
+      "Cấm Địa": 2,
+      "Kiếm Trủng": 1,
+    });
+    const name = `${Names.getBase(43)} ${subtype}`;
+
+    pack.zones.push({
+      i: pack.zones.length,
+      name,
+      type: "Secret realm",
+      cells: realmCells,
+      color: "url(#hatch7)",
     });
   }
 

@@ -176,6 +176,103 @@ class CulturesModule {
       ];
     }
 
+    if (culturesSet.value === "xianxia") {
+      // Vietnamese-language cultivation-fantasy (tiên hiệp) world, all cultures use the Tien Hiep namebase
+      return [
+        {
+          name: "Thiên Việt",
+          base: 43,
+          odd: 1,
+          sort: (i: number) => n(i) / td(i, 12),
+          shield: "round",
+        },
+        {
+          name: "Lạc Hồng",
+          base: 43,
+          odd: 1,
+          sort: (i: number) => n(i) / td(i, 15) / sf(i),
+          shield: "round",
+        },
+        {
+          name: "Vân Sơn",
+          base: 43,
+          odd: 1,
+          sort: (i: number) => (n(i) / td(i, 10)) * h[i],
+          shield: "oval",
+        },
+        {
+          name: "Cửu Long",
+          base: 43,
+          odd: 1,
+          sort: (i: number) => n(i) / td(i, 18) / sf(i),
+          shield: "oval",
+        },
+        {
+          name: "Linh Xuyên",
+          base: 43,
+          odd: 0.9,
+          sort: (i: number) => (n(i) / td(i, 13)) * t[i],
+          shield: "round",
+        },
+        {
+          name: "Đông Hải",
+          base: 43,
+          odd: 0.8,
+          sort: (i: number) => n(i) / td(i, 16) / sf(i),
+          shield: "round",
+        },
+        {
+          name: "Thái Hư",
+          base: 43,
+          odd: 0.6,
+          sort: (i: number) => (n(i) / td(i, 8)) * h[i],
+          shield: "oval",
+        },
+        {
+          name: "Kiếm Bắc",
+          base: 43,
+          odd: 0.6,
+          sort: (i: number) => n(i) / td(i, 4),
+          shield: "round",
+        },
+        {
+          name: "Huyền Băng",
+          base: 43,
+          odd: 0.5,
+          sort: (i: number) => n(i) / td(i, -5),
+          shield: "round",
+        },
+        {
+          name: "Viêm Hỏa",
+          base: 43,
+          odd: 0.5,
+          sort: (i: number) => n(i) / td(i, 26),
+          shield: "oval",
+        },
+        {
+          name: "Bách Yêu",
+          base: 43,
+          odd: 0.5,
+          sort: (i: number) => n(i) / td(i, 14) / bd(i, [5, 6, 7, 8]),
+          shield: "round",
+        },
+        {
+          name: "U Minh",
+          base: 43,
+          odd: 0.4,
+          sort: (i: number) => n(i) / td(i, 18) / bd(i, [12], 8),
+          shield: "oval",
+        },
+        {
+          name: "Man Hoang",
+          base: 43,
+          odd: 0.5,
+          sort: (i: number) => n(i) / td(i, 22) / bd(i, [1, 2, 3]),
+          shield: "round",
+        },
+      ];
+    }
+
     if (culturesSet.value === "oriental") {
       return [
         {
@@ -1219,10 +1316,11 @@ class CulturesModule {
     this.cells.culture = cultureIds;
 
     // the first culture with id 0 is for wildlands
+    const isXianxia = culturesSet.value === "xianxia";
     cultures.unshift({
-      name: "Wildlands",
+      name: isXianxia ? "Hoang Dã" : "Wildlands",
       i: 0,
-      base: 1,
+      base: isXianxia ? 43 : 1,
       origins: [null],
       shield: "round",
     });

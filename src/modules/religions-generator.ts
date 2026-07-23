@@ -1085,8 +1085,21 @@ class ReligionsModule {
       ERROR && console.error("Please define a culture");
       return;
     }
-    const meaning = this.generateMeaning();
     const cultureName = Names.getCulture(culture);
+    if (pack.cultures[culture]?.base === 43) {
+      // Vietnamese xianxia: immortal honorifics instead of epithets
+      const title = ra([
+        "Chân Nhân",
+        "Thượng Tiên",
+        "Đại Đế",
+        "Lão Tổ",
+        "Tiên Tôn",
+        "Thánh Nhân",
+        "Đạo Quân",
+      ]);
+      return `${cultureName} ${title}`;
+    }
+    const meaning = this.generateMeaning();
     return `${cultureName}, The ${meaning}`;
   }
 
@@ -1097,6 +1110,10 @@ class ReligionsModule {
     center: number,
   ): [string, string] {
     const { cells, cultures, burgs, states } = pack;
+
+    const cultureId = cells.culture[center];
+    if (cultures[cultureId]?.base === 43)
+      return this.getXianxiaReligionName(variety, deity, cultureId);
 
     const random = () => Names.getCulture(cells.culture[center]);
     const type = rw(types[form]);
@@ -1132,6 +1149,41 @@ class ReligionsModule {
     if (m === "Type + of the + meaning")
       return [`${type} of the ${this.generateMeaning()}`, "global"];
     return [`${trimVowels(random())}ism`, "global"]; // else
+  }
+
+  // Vietnamese xianxia religions: cultivation paths (Đạo), faiths (Giáo) and demonic cults
+  private getXianxiaReligionName(
+    variety: string,
+    deity: string,
+    cultureId: number,
+  ): [string, string] {
+    const supreme = deity
+      ? deity.split(/[ ,]+/)[0]
+      : Names.getCulture(cultureId);
+
+    if (variety === "Folk")
+      return [`${pack.cultures[cultureId].name} Đạo`, "culture"];
+    if (variety === "Cult")
+      return [
+        `${ra(["Huyết", "Ma", "U Minh", "Quỷ", "Vong", "Hắc"])} Giáo`,
+        "global",
+      ];
+    if (variety === "Heresy")
+      return [`${ra(["Tà", "Nghịch", "Ly", "Ám"])} Đạo`, "global"];
+
+    // Organized: cultivation paths
+    const roll = Math.random();
+    if (roll < 0.35)
+      return [
+        `${ra(["Kiếm", "Đan", "Phù", "Trận", "Lôi", "Băng", "Hỏa", "Vô", "Tâm", "Mộng", "Thanh", "Huyền"])} Đạo`,
+        "global",
+      ];
+    if (roll < 0.6) return [`${supreme} Giáo`, "global"];
+    if (roll < 0.8) return [`${Names.getCulture(cultureId)} Đạo`, "state"];
+    return [
+      `${ra(["Thái", "Huyền", "Thanh", "Ngọc", "Tử"])} ${ra(["Thanh", "Hư", "Vi", "Dương", "Minh"])} Đạo`,
+      "global",
+    ];
   }
 
   private generateMeaning(): string {

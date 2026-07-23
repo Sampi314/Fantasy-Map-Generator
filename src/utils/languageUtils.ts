@@ -7,7 +7,7 @@ import { P } from "./probabilityUtils";
  * @returns True if the character is a vowel, false otherwise.
  */
 export const isVowel = (c: string): boolean => {
-  const VOWELS = `aeiouyɑ'əøɛœæɶɒɨɪɔɐʊɤɯаоиеёэыуюяàèìòùỳẁȁȅȉȍȕáéíóúýẃőűâêîôûŷŵäëïöüÿẅãẽĩõũỹąęįǫųāēīōūȳăĕĭŏŭǎěǐǒǔȧėȯẏẇạẹịọụỵẉḛḭṵṳ`;
+  const VOWELS = `aeiouyɑ'əøɛœæɶɒɨɪɔɐʊɤɯаоиеёэыуюяàèìòùỳẁȁȅȉȍȕáéíóúýẃőűâêîôûŷŵäëïöüÿẅãẽĩõũỹąęįǫųāēīōūȳăĕĭŏŭǎěǐǒǔȧėȯẏẇạẹịọụỵẉḛḭṵṳơưảẻỉỏủỷấầẩẫậắằẳẵặếềểễệốồổỗộớờởỡợứừửữự`;
   return VOWELS.includes(c);
 };
 
@@ -30,6 +30,10 @@ export const trimVowels = (string: string, minLength: number = 3) => {
  * @returns The adjective form of the noun.
  */
 export const getAdjective = (nounToBeAdjective: string) => {
+  // Vietnamese nouns act as their own adjectives, Latin suffixes would mangle them
+  if (/[ăâđêôơưĂÂĐÊÔƠƯạ-ỹẠ-Ỹ]/.test(nounToBeAdjective))
+    return nounToBeAdjective;
+
   const adjectivizationRules = [
     {
       name: "guo",

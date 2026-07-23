@@ -698,10 +698,12 @@ class StatesModule {
       const tier = expTiers[s.i];
 
       const religion = pack.cells.religion[s.center];
+      const isXianxia = pack.cultures[s.culture].base === 43;
       const isTheocracy =
         (religion && pack.religions[religion].expansion === "state") ||
         (P(0.1) &&
-          ["Organized", "Cult"].includes(pack.religions[religion].type));
+          ["Organized", "Cult"].includes(pack.religions[religion].type)) ||
+        (isXianxia && P(0.4)); // in xianxia worlds cultivation sects rule much of the land
       const isAnarchy = P(0.01 - tier / 500);
 
       if (isTheocracy) s.form = "Theocracy";
@@ -713,6 +715,19 @@ class StatesModule {
 
         if (s.form === "Monarchy") {
           const form = monarchy[tier];
+
+          if (base === 43) {
+            // Vietnamese xianxia: mortal dynasties
+            if (s.diplomacy && P(0.5) && s.diplomacy.includes("Vassal"))
+              return "Phiên Quốc"; // vassal state
+            if (form === "Empire") return P(0.3) ? "Thiên Triều" : "Đế Quốc";
+            if (form === "Kingdom")
+              return P(0.25) ? "Vương Triều" : "Vương Quốc";
+            if (form === "Principality") return "Quốc";
+            if (form === "Grand Duchy") return "Công Quốc";
+            return "Hầu Quốc"; // Duchy
+          }
+
           // Default name depends on exponent tier, some culture bases have special names for tiers
           if (s.diplomacy) {
             if (
@@ -751,6 +766,12 @@ class StatesModule {
         }
 
         if (s.form === "Republic") {
+          if (base === 43) {
+            // Vietnamese xianxia: merchant alliances and free cities
+            if (tier < 2 && s.burgs === 1) return "Thành Bang"; // city-state
+            return rw({ "Thương Hội": 3, Minh: 2, "Nghị Hội": 1 });
+          }
+
           // Default name is from weighted array, special case for small states with only 1 burg
           if (tier < 2 && s.burgs === 1) {
             if (
@@ -764,10 +785,29 @@ class StatesModule {
           return rw(republic);
         }
 
-        if (s.form === "Union") return rw(union);
-        if (s.form === "Anarchy") return rw(anarchy);
+        if (s.form === "Union")
+          return base === 43
+            ? rw({ "Liên Minh": 4, "Hội Minh": 1, "Vạn Quốc Minh": 1 })
+            : rw(union);
+        if (s.form === "Anarchy")
+          return base === 43
+            ? rw({ "Tán Tu Địa": 2, "Ma Vực": 1, "Loạn Hoang": 1 })
+            : rw(anarchy);
 
         if (s.form === "Theocracy") {
+          if (base === 43) {
+            // Vietnamese xianxia: cultivation sects, scaled by state power tier
+            if (tier < 2)
+              return rw({ Môn: 3, Phái: 3, Cốc: 1, Cung: 1, Điện: 1, Am: 1 });
+            if (tier < 4)
+              return rw({
+                Tông: 6,
+                "Kiếm Tông": 1,
+                "Đạo Tông": 1,
+                "Thần Giáo": 1,
+              });
+            return rw({ "Thánh Địa": 4, "Tiên Tông": 1, "Đại Giáo": 1 });
+          }
           // European
           if ([0, 1, 2, 3, 4, 6, 8, 9, 13, 15, 20].includes(base)) {
             if (P(0.1)) return `Divine ${monarchy[tier]}`;
@@ -794,6 +834,41 @@ class StatesModule {
     TIME && console.timeEnd("defineStateForms");
   }
 
+  // Vietnamese (xianxia) forms follow the "Name + Form" word order, e.g. "Thanh Vân Tông"
+  postfixForms = new Set([
+    "Hầu Quốc",
+    "Công Quốc",
+    "Quốc",
+    "Vương Quốc",
+    "Vương Triều",
+    "Đế Quốc",
+    "Thiên Triều",
+    "Phiên Quốc",
+    "Thành Bang",
+    "Thương Hội",
+    "Minh",
+    "Nghị Hội",
+    "Liên Minh",
+    "Hội Minh",
+    "Vạn Quốc Minh",
+    "Tán Tu Địa",
+    "Ma Vực",
+    "Loạn Hoang",
+    "Môn",
+    "Phái",
+    "Cốc",
+    "Cung",
+    "Điện",
+    "Am",
+    "Tông",
+    "Kiếm Tông",
+    "Đạo Tông",
+    "Thần Giáo",
+    "Thánh Địa",
+    "Tiên Tông",
+    "Đại Giáo",
+  ]);
+
   getFullName(state: State) {
     // state forms requiring Adjective + Name, all other forms use scheme Form + Of + Name
     const adjForms = [
@@ -817,6 +892,8 @@ class StatesModule {
     ];
     if (!state.formName) return state.name;
     if (!state.name && state.formName) return `The ${state.formName}`;
+    if (this.postfixForms.has(state.formName))
+      return `${state.name} ${state.formName}`;
     const adjName =
       adjForms.includes(state.formName) && !/-| /.test(state.name);
     return adjName

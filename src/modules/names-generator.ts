@@ -70,6 +70,7 @@ class NamesGenerator {
   }
 
   updateChain(index: number): void {
+    delete this.compoundPools[index];
     this.chains[index] = nameBases[index]?.b
       ? this.calculateChain(nameBases[index].b)
       : null;
@@ -77,6 +78,7 @@ class NamesGenerator {
 
   clearChains(): void {
     this.chains = [];
+    this.compoundPools = {};
   }
 
   // generate name using Markov's chain
@@ -98,6 +100,10 @@ class NamesGenerator {
         return "ERROR";
       }
     }
+
+    // Vietnamese xianxia base: names are compounds of real monosyllables,
+    // recombining corpus syllables always yields valid words, unlike the Markov chain
+    if (base === 43) return this.getCompoundName(base);
 
     if (!this.chains[base]) this.updateChain(base);
 
@@ -169,6 +175,32 @@ class NamesGenerator {
     return name;
   }
 
+  private compoundPools: Record<number, { heads: string[]; tails: string[] }> =
+    {};
+
+  // recombine real syllables of a multi-word namebase into new compounds
+  private getCompoundName(base: number): string {
+    if (!this.compoundPools[base]) {
+      const entries = nameBases[base].b
+        .split(",")
+        .map((n) => n.trim().split(" "));
+      const heads = entries.map((e) => e[0]);
+      const tails = entries
+        .filter((e) => e.length > 1)
+        .map((e) => last(e) as string);
+      this.compoundPools[base] = { heads, tails };
+    }
+
+    const { heads, tails } = this.compoundPools[base];
+    for (let i = 0; i < 10; i++) {
+      const parts = P(0.12)
+        ? [ra(heads), ra(tails), ra(tails)]
+        : [ra(heads), ra(tails)];
+      if (new Set(parts).size === parts.length) return parts.join(" ");
+    }
+    return `${ra(heads)} ${ra(tails)}`;
+  }
+
   // generate name for culture
   getCulture(
     culture: number,
@@ -233,6 +265,13 @@ class NamesGenerator {
       return "ERROR";
     }
     if (base === undefined) base = pack.cultures[culture].base;
+
+    // Vietnamese bases: multi-word names are natural, keep them and use no Latin suffix
+    if (base === 29 || base === 43) {
+      const great = base === 43 ? "Đại" : "Dai"; // great-state prefix, e.g. Đại Việt
+      if (P(0.15) && !name.startsWith(great)) return `${great} ${name}`;
+      return name;
+    }
 
     // exclude endings inappropriate for states name
     if (name.includes(" "))
@@ -713,6 +752,16 @@ class NamesGenerator {
         d: "ankprs",
         m: 0,
         b: "Adme,Adramet,Agadir,Akko,Akzib,Alimas,Alis-Ubbo,Alqosh,Amid,Ammon,Ampi,Amurru,Andarig,Anpa,Araden,Aram,Arwad,Ashkelon,Athar,Atiq,Aza,Azeka,Baalbek,Babel,Batrun,Beerot,Beersheba,Beit Shemesh,Berytus,Bet Agus,Bet Anya,Beth-Horon,Bethel,Bethlehem,Bethuel,Bet Nahrin,Bet Nohadra,Bet Zalin,Birmula,Biruta,Bit Agushi,Bitan,Bit Zamani,Cerne,Dammeseq,Darmsuq,Dor,Eddial,Eden Ekron,Elah,Emek,Emun,Ephratah,Eyn Ganim,Finike,Gades,Galatia,Gaza,Gebal,Gedera,Gerizzim,Gethsemane,Gibeon,Gilead,Gilgal,Golgotha,Goshen,Gytte,Hagalil,Haifa,Halab,Haqel Dma,Har Habayit,Har Nevo,Har Pisga,Havilah,Hazor,Hebron,Hormah,Iboshim,Iriho,Irinem,Irridu,Israel,Kadesh,Kanaan,Kapara,Karaly,Kart-Hadasht,Keret Chadeshet,Kernah,Kesed,Keysariya,Kfar,Kfar Nahum,Khalibon,Khalpe,Khamat,Kiryat,Kittim,Kurda,Lapethos,Larna,Lepqis,Lepriptza,Liksos,Lod,Luv,Malaka,Malet,Marat,Megido,Melitta,Merdin,Metsada,Mishmarot,Mitzrayim,Moab,Mopsos,Motye,Mukish,Nampigi,Nampigu,Natzrat,Nimrud,Nineveh,Nob,Nuhadra,Oea,Ofir,Oyat,Phineka,Phoenicus,Pleshet,Qart-Tubah Sarepta,Qatna,Rabat Amon,Rakkath,Ramat Aviv,Ramitha,Ramta,Rehovot,Reshef,Rushadir,Rushakad,Samrin,Sefarad,Sehyon,Sepat,Sexi,Sharon,Shechem,Shefelat,Shfanim,Shiloh,Shmaya,Shomron,Sidon,Sinay,Sis,Solki,Sur,Suria,Tabetu,Tadmur,Tarshish,Tartus,Teberya,Tefessedt,Tekoa,Teyman,Tinga,Tipasa,Tsabratan,Tur Abdin,Tzarfat,Tziyon,Tzor,Ugarit,Unubaal,Ureshlem,Urhay,Urushalim,Vaga,Yaffa,Yamhad,Yam hamelach,Yam Kineret,Yamutbal,Yathrib,Yaudi,Yavne,Yehuda,Yerushalayim,Yev,Yevus,Yizreel,Yurdnan,Zarefat,Zeboim,Zeurta,Zeytim,Zikhron,Zmurna",
+      },
+      // Vietnamese cultivation-fantasy (tiên hiệp) base: Sino-Vietnamese (Hán Việt) toponyms
+      {
+        name: "Tien Hiep",
+        i: 43,
+        min: 5,
+        max: 13,
+        d: "",
+        m: 1,
+        b: "Thanh Vân,Bích Hải,Lăng Tiêu,Vạn Kiếm,Thiên Cơ,Huyền Thiên,Trường Sinh,Cửu U,Thái Hư,Linh Sơn,Đan Đỉnh,Kiếm Các,Phong Lôi,Tử Tiêu,Hồng Hoang,Ngọc Hư,Băng Tâm,Hỏa Vân,Kim Quang,Bạch Đế,Thần Nông,Lạc Hồng,Văn Lang,Âu Lạc,Hồng Bàng,Cửu Thiên,Vân Mộng,Tiêu Dao,Thái Ất,Tử Vi,Thiên Lang,Địa Hỏa,Huyền Vũ,Chu Tước,Thanh Long,Bạch Hổ,Kỳ Lân,Phượng Hoàng,Long Cung,Bồng Lai,Doanh Châu,Côn Lôn,Thục Sơn,Yên Tử,Tản Viên,Hương Tích,Bạch Mã,Trường Sơn,Hoành Sơn,Cửu Long,Tam Đảo,Ba Vì,Ngũ Hành,Vô Cực,Thái Cực,Lưỡng Nghi,Tứ Tượng,Bát Quái,Cửu Cung,Vạn Tượng,Thiên Hà,Ngân Hà,Tinh Vân,Nguyệt Lãnh,Nhật Diệu,Càn Khôn,Hỗn Độn,Hư Không,Vĩnh Hằng,Cổ Nguyệt,Thượng Thanh,Ngọc Thanh,Thái Thanh,Tử Phủ,Linh Tiêu,Quảng Hàn,Dao Trì,Bích Lạc,U Minh,Luân Hồi,Tam Sinh,Vong Xuyên,Thiên Nhai,Vân Đỉnh,Tuyết Lãnh,Hàn Sơn,Viêm Cốc,Lôi Trạch,Phong Cốc,Vũ Lâm,Sương Hà,Yên Ba,Nguyệt Ảnh,Hoa Sơn,Mai Lĩnh,Trúc Hải,Tùng Phong,Liên Trì,Đào Nguyên,Hạnh Lâm,Quế Nham,Lan Đình,Cúc Khê,Mộc Cốc,Thạch Trận,Kim Đài,Thủy Liêm,Hỏa Diệm,Huyết Nguyệt,Ma Vực,Yêu Lâm,Quỷ Cốc,Tiên Đô,Thánh Uyên,Đế Lăng,Vương Thành,Long Mạch,Linh Tuyền,Đan Khê,Kiếm Trủng,Phù Sơn,Bảo Tháp,Cầm Đài,Tàng Kinh,Trúc Cơ,Kim Đan,Nguyên Anh,Hóa Thần,Luyện Hư,Đại Thừa,Độ Kiếp,Bạch Vân,Hắc Thủy,Xích Diệm,Lam Điền,Hoàng Tuyền,Thanh Khâu,Bích Du,Vân Tiêu,Linh Ẩn,Thần Khê,Tiên Nguyên,Vạn Cổ,Thái Sơ,Hồng Mông,Tử Hà,Kim Ô,Ngọc Thố,Thiềm Cung,Quy Khư,Phù Tang,Nhược Thủy,Côn Bằng,Trấn Nam,Định Bắc,An Đông,Bình Tây",
       },
     ];
   }

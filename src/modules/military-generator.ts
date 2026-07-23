@@ -1,5 +1,6 @@
 import { quadtree, sum } from "d3";
 import {
+  byId,
   findAllInQuadtree,
   gauss,
   minmax,
@@ -54,7 +55,9 @@ class MilitaryModule {
     const { cells, states } = pack;
     const { p } = cells;
     const valid = states.filter((s) => s.i && !s.removed); // valid states
-    if (!options.military) options.military = this.getDefaultOptions();
+    // refresh defaults when not customized, so a cultures set change is picked up
+    if (!options.military || this.isDefaultOptions(options.military))
+      options.military = this.getDefaultOptions();
 
     const expn = sum(valid.map((s) => s.expansionism)); // total expansion
     const area = sum(valid.map((s) => s.area)); // total area
@@ -498,6 +501,14 @@ class MilitaryModule {
   }
 
   getDefaultOptions() {
+    const isXianxia =
+      (byId("culturesSet") as HTMLSelectElement | null)?.value === "xianxia";
+    return isXianxia
+      ? [...this.getBaseUnits(), ...this.getCultivatorUnits()]
+      : this.getBaseUnits();
+  }
+
+  private getBaseUnits() {
     return [
       {
         icon: "⚔️",
@@ -550,6 +561,42 @@ class MilitaryModule {
         separate: 1,
       },
     ];
+  }
+
+  // cultivators (tu sĩ) and sword immortals (kiếm tu) for xianxia worlds
+  private getCultivatorUnits() {
+    return [
+      {
+        icon: "🧘",
+        name: "tu_si",
+        rural: 0.005,
+        urban: 0.01,
+        crew: 1,
+        power: 10,
+        type: "magical",
+        separate: 0,
+      },
+      {
+        icon: "🗡️",
+        name: "kiem_tu",
+        rural: 0.001,
+        urban: 0.003,
+        crew: 1,
+        power: 25,
+        type: "magical",
+        separate: 0,
+      },
+    ];
+  }
+
+  // true if units match a default set exactly, meaning the user has not customized them
+  private isDefaultOptions(units: unknown) {
+    const signature = JSON.stringify(units);
+    return (
+      signature === JSON.stringify(this.getBaseUnits()) ||
+      signature ===
+        JSON.stringify([...this.getBaseUnits(), ...this.getCultivatorUnits()])
+    );
   }
 
   getName(r: MilitaryRegiment, regiments: MilitaryRegiment[]) {
