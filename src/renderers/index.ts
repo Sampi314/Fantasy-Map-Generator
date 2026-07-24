@@ -1,6 +1,7 @@
 import "./draw-borders";
 import "./draw-burg-icons";
 import "./draw-burg-labels";
+import "./draw-city-plans";
 import "./draw-emblems";
 import "./draw-features";
 import "./draw-heightmap";

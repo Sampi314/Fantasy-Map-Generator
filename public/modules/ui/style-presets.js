@@ -221,6 +221,7 @@ function addStylePreset() {
       "#cults": ["opacity", "stroke", "stroke-width", "stroke-dasharray", "stroke-linecap", "filter"],
       "#landmass": ["opacity", "fill", "filter"],
       "#markers": ["opacity", "rescale", "filter"],
+      "#cityPlans": ["opacity", "data-size", "filter"],
       "#prec": ["opacity", "stroke", "stroke-width", "fill", "filter"],
       "#population": ["opacity", "stroke-width", "stroke-dasharray", "stroke-linecap", "filter"],
       "#rural": ["stroke"],

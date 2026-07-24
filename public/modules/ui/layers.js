@@ -209,6 +209,7 @@ function drawLayers() {
   if (layerIsOn("toggleBurgIcons")) drawBurgIcons();
   if (layerIsOn("toggleMilitary")) drawMilitary();
   if (layerIsOn("toggleMarkers")) drawMarkers();
+  if (layerIsOn("toggleCityPlans")) drawCityPlans();
   if (layerIsOn("toggleRulers")) rulers.draw();
   // scale bar
   // vignette
@@ -831,6 +832,18 @@ function toggleMarkers(event) {
     if (event && isCtrlClick(event)) return editStyle("markers");
     markers.selectAll("*").remove();
     turnButtonOff("toggleMarkers");
+  }
+}
+
+function toggleCityPlans(event) {
+  if (!layerIsOn("toggleCityPlans")) {
+    turnButtonOn("toggleCityPlans");
+    drawCityPlans();
+    if (event && isCtrlClick(event)) editStyle("cityPlans");
+  } else {
+    if (event && isCtrlClick(event)) return editStyle("cityPlans");
+    cityPlans.selectAll("*").remove();
+    turnButtonOff("toggleCityPlans");
   }
 }
 

@@ -71,6 +71,7 @@ let ice = viewbox.append("g").attr("id", "ice");
 let prec = viewbox.append("g").attr("id", "prec").style("display", "none");
 let population = viewbox.append("g").attr("id", "population");
 let emblems = viewbox.append("g").attr("id", "emblems").style("display", "none");
+let cityPlans = viewbox.append("g").attr("id", "cityPlans");
 let icons = viewbox.append("g").attr("id", "icons");
 let labels = viewbox.append("g").attr("id", "labels");
 let burgIcons = icons.append("g").attr("id", "burgIcons");
